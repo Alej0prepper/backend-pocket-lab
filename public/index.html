@@ -1,0 +1,1289 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>API Patterns: REST, Webhooks, SOAP y GraphQL</title>
+  <meta name="description" content="Guía práctica de REST, Webhooks, SOAP y GraphQL con comparativas y ejemplos production-ready." />
+
+  <style>
+    :root{
+      --bg: #0b1220;
+      --surface: rgba(255,255,255,.06);
+      --surface2: rgba(255,255,255,.10);
+      --card: rgba(255,255,255,.08);
+      --border: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.72);
+      --muted2: rgba(255,255,255,.58);
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --shadow2: 0 10px 26px rgba(0,0,0,.24);
+      --radius: 18px;
+      --radius2: 14px;
+      --blue: #3b82f6;
+      --blue2:#2563eb;
+      --green:#22c55e;
+      --red:#ef4444;
+      --amber:#f59e0b;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(59,130,246,.28), transparent 60%),
+        radial-gradient(900px 600px at 90% 10%, rgba(34,197,94,.18), transparent 55%),
+        radial-gradient(1200px 900px at 50% 110%, rgba(245,158,11,.12), transparent 55%),
+        linear-gradient(180deg, #070c16 0%, #0b1220 40%, #0b1220 100%);
+      overflow-x:hidden;
+    }
+
+    a{color:inherit; text-decoration:none}
+    a:hover{opacity:.92}
+
+    .shell{
+      max-width: 1080px;
+      margin: 32px auto 60px;
+      padding: 0 16px;
+    }
+
+    .frame{
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .topbar{
+      padding: 26px 28px 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .hero{
+      text-align:center;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .hero h1{
+      margin: 0 0 10px;
+      font-size: clamp(24px, 3vw, 36px);
+      letter-spacing:-.02em;
+      line-height: 1.15;
+    }
+    .hero p{
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .cta-row{
+      display:flex;
+      gap: 10px;
+      justify-content:center;
+      flex-wrap: wrap;
+    }
+
+    .btn{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 650;
+      cursor:pointer;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      box-shadow: 0 8px 18px rgba(0,0,0,.18);
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+    }
+    .btn:hover{transform: translateY(-1px); background: rgba(255,255,255,.085)}
+    .btn:active{transform: translateY(0px)}
+    .btn.primary{
+      background: linear-gradient(180deg, rgba(59,130,246,.95), rgba(37,99,235,.92));
+      border-color: rgba(59,130,246,.55);
+    }
+    .btn.primary:hover{background: linear-gradient(180deg, rgba(59,130,246,1), rgba(37,99,235,1))}
+    .btn.ghost{
+      background: rgba(255,255,255,.04);
+    }
+
+    .content{
+      display:grid;
+      grid-template-columns: 260px 1fr;
+      gap: 18px;
+      padding: 18px;
+      align-items:start;
+    }
+    @media (max-width: 920px){
+      .content{grid-template-columns: 1fr}
+      .sidebar{position: static !important}
+    }
+
+    .sidebar{
+      position: sticky;
+      top: 18px;
+      align-self:start;
+    }
+
+    .panel{
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+    }
+
+    .panel .hd{
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.09);
+      background: rgba(255,255,255,.04);
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+    }
+    .panel .hd .title{
+      font-weight: 750;
+      font-size: 13px;
+      letter-spacing:.02em;
+      color: rgba(255,255,255,.88);
+      display:flex;
+      gap: 8px;
+      align-items:center;
+    }
+    .dot{
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 0 4px rgba(59,130,246,.18);
+    }
+
+    .panel .bd{padding: 14px;}
+
+    .me{
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+      align-items:center;
+      text-align:center;
+    }
+
+    .avatar{
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.65), transparent 35%),
+        radial-gradient(circle at 70% 70%, rgba(59,130,246,.55), transparent 45%),
+        linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 10px 30px rgba(0,0,0,.28);
+    }
+    .me .name{font-weight: 800; margin-top: 2px}
+    .me .role{font-size: 12px; color: var(--muted2)}
+    .badges{
+      width:100%;
+      display:grid;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .badge{
+      display:flex;
+      gap: 10px;
+      align-items:flex-start;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      text-align:left;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .icon{width: 18px; height: 18px; flex: 0 0 18px; opacity:.95;}
+
+    .social{display:flex; gap: 10px; justify-content:center; margin-top: 4px;}
+    .chip{
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: rgba(255,255,255,.84);
+      display:inline-flex;
+      gap: 8px;
+      align-items:center;
+      cursor:pointer;
+      transition: background .12s ease, transform .12s ease;
+    }
+    .chip:hover{background: rgba(255,255,255,.07); transform: translateY(-1px)}
+
+    .main{
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .section{
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+    }
+
+    .section .hd{
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .section .hd h2{margin:0;font-size: 15px;letter-spacing: -.01em;}
+    .section .hd .meta{
+      font-size: 12px;
+      color: var(--muted2);
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .pill{
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.035);
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+    .section .bd{padding: 14px 16px 16px}
+
+    .cards{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 10px;
+    }
+    @media (max-width: 920px){ .cards{grid-template-columns: repeat(2, minmax(0,1fr));} }
+    @media (max-width: 520px){ .cards{grid-template-columns: 1fr;} }
+
+    .card{
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      border-radius: 14px;
+      padding: 12px;
+      min-height: 78px;
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+    }
+    .card .k{font-weight:800; letter-spacing:.01em}
+    .card .d{font-size: 12px; color: var(--muted)}
+    .card .tag{
+      margin-top:auto;
+      font-size: 11px;
+      color: rgba(255,255,255,.75);
+      display:inline-flex;
+      gap: 6px;
+      align-items:center;
+    }
+
+    .diagram{
+      margin-top: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      border-radius: 14px;
+      padding: 14px;
+      overflow:hidden;
+    }
+    .flow{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 10px;
+      flex-wrap:wrap;
+      margin-top: 4px;
+    }
+    .node{
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255,255,255,.88);
+      min-width: 112px;
+      text-align:center;
+    }
+    .arrow{opacity:.75;font-size: 16px;transform: translateY(-1px);}
+
+    .compare{
+      display:grid;
+      grid-template-columns: 1.4fr .85fr;
+      gap: 12px;
+      align-items:start;
+    }
+    @media (max-width: 920px){ .compare{grid-template-columns: 1fr} }
+
+    table{
+      width:100%;
+      border-collapse: collapse;
+      overflow:hidden;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+    }
+    th, td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      border-right: 1px solid rgba(255,255,255,.06);
+      font-size: 12px;
+      color: rgba(255,255,255,.85);
+      text-align:center;
+      vertical-align:middle;
+    }
+    th:first-child, td:first-child{text-align:left}
+    th{
+      font-size: 12px;
+      font-weight: 800;
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.9);
+    }
+    tr:last-child td{border-bottom:none}
+    td:last-child, th:last-child{border-right:none}
+
+    .mark{
+      display:inline-flex;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      align-items:center;
+      justify-content:center;
+      font-weight: 900;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .mark.ok{color: var(--green); box-shadow: 0 0 0 4px rgba(34,197,94,.12)}
+    .mark.no{color: var(--red); box-shadow: 0 0 0 4px rgba(239,68,68,.10)}
+    .mark.mid{color: var(--amber); box-shadow: 0 0 0 4px rgba(245,158,11,.10)}
+
+    .quick{
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      overflow:hidden;
+    }
+    .quick .qhd{
+      padding: 12px 12px 10px;
+      background: rgba(255,255,255,.05);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      font-weight: 800;
+      font-size: 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .toggle{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 11px;
+      cursor:pointer;
+    }
+    .quick ul{
+      margin: 0;
+      padding: 10px 12px 12px;
+      list-style:none;
+      display:grid;
+      gap: 10px;
+    }
+    .quick li{
+      display:flex;
+      gap: 10px;
+      align-items:flex-start;
+      font-size: 12px;
+      color: rgba(255,255,255,.82);
+      line-height:1.35;
+    }
+    .bullet{
+      width: 18px; height: 18px; border-radius: 6px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(59,130,246,.12);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex: 0 0 18px;
+      font-weight: 900;
+      color: rgba(255,255,255,.85);
+      font-size: 12px;
+    }
+
+    .examples{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 920px){ .examples{grid-template-columns: 1fr} }
+
+    .ex{
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      overflow:hidden;
+    }
+    .ex .exhd{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 12px 12px 10px;
+      background: rgba(255,255,255,.05);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .ex .exhd .label{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-weight: 850;
+      font-size: 12px;
+      letter-spacing:.01em;
+    }
+
+    .code{
+      position:relative;
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.45;
+      color: rgba(255,255,255,.86);
+      background: rgba(0,0,0,.22);
+      border-top: 1px solid rgba(255,255,255,.06);
+      overflow:auto;
+    }
+    .code .copy{
+      position:absolute;
+      top: 10px;
+      right: 10px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.88);
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor:pointer;
+      font-size: 11px;
+      font-family: var(--sans);
+      font-weight: 750;
+      display:flex;
+      gap: 6px;
+      align-items:center;
+    }
+    .code .copy:hover{background: rgba(255,255,255,.08)}
+
+    /* Run */
+    .runRow{
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .miniBtn{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.90);
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor:pointer;
+      font-size: 11px;
+      font-family: var(--sans);
+      font-weight: 800;
+      display:inline-flex;
+      gap: 6px;
+      align-items:center;
+      transition: transform .12s ease, background .12s ease;
+      user-select:none;
+    }
+    .miniBtn:hover{transform: translateY(-1px); background: rgba(255,255,255,.08)}
+    .miniBtn:active{transform: translateY(0px)}
+    .miniBtn.primary{
+      background: linear-gradient(180deg, rgba(59,130,246,.95), rgba(37,99,235,.92));
+      border-color: rgba(59,130,246,.55);
+    }
+    .miniBtn.primary:hover{background: linear-gradient(180deg, rgba(59,130,246,1), rgba(37,99,235,1))}
+    .miniBtn[disabled]{
+      opacity:.45;
+      cursor:not-allowed;
+      transform:none !important;
+    }
+
+    .out{
+      border-top: 1px solid rgba(255,255,255,.06);
+      padding: 12px;
+      background: rgba(0,0,0,.18);
+    }
+    .outHdr{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: rgba(255,255,255,.82);
+    }
+    .outHdr .status{
+      font-family: var(--mono);
+      font-size: 11px;
+      color: rgba(255,255,255,.72);
+    }
+    .out pre{
+      margin:0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(255,255,255,.86);
+      line-height: 1.45;
+    }
+    .hint{
+      color: rgba(255,255,255,.58);
+    }
+
+    .input{
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.92);
+      outline: none;
+      font-size: 12px;
+    }
+    .input::placeholder{color: rgba(255,255,255,.52)}
+
+    .demos{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      padding-top: 6px;
+    }
+    .demo{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 800;
+      font-size: 12px;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      cursor:pointer;
+      transition: transform .12s ease, background .12s ease;
+      min-width: 210px;
+      justify-content:center;
+    }
+    .demo:hover{transform: translateY(-1px); background: rgba(255,255,255,.07)}
+    .demo .badgeDot{
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 0 4px rgba(59,130,246,.16);
+    }
+    .demo.green .badgeDot{background: var(--green); box-shadow: 0 0 0 4px rgba(34,197,94,.14)}
+    .demo.purple .badgeDot{background: #a855f7; box-shadow: 0 0 0 4px rgba(168,85,247,.14)}
+
+    .footnote{
+      padding: 16px;
+      text-align:center;
+      color: rgba(255,255,255,.64);
+      font-size: 12px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.02);
+    }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.6);
+      border: 1px solid rgba(255,255,255,.18);
+      color: rgba(255,255,255,.92);
+      padding: 10px 12px;
+      border-radius: 12px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.45);
+      font-size: 12px;
+      opacity: 0;
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      max-width: min(520px, calc(100vw - 24px));
+    }
+    .toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+    .toast .tDot{
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(34,197,94,.14);
+      flex:0 0 9px;
+    }
+
+    .muted{color: var(--muted2)}
+    .hr{height:1px;background: rgba(255,255,255,.08);margin: 12px 0;}
+
+    /* Cards clickeables + hover */
+.cardInteractive{
+  cursor: pointer;
+  transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease;
+  position: relative;
+  overflow: hidden;
+  display: block; /* importante para que <a> se comporte como card */
+}
+
+.cardInteractive:hover{
+  transform: translateY(-4px);
+  border-color: rgba(59,130,246,.55);
+  background: rgba(255,255,255,.07);
+  box-shadow: 0 18px 50px rgba(0,0,0,.35), 0 0 0 4px rgba(59,130,246,.12);
+}
+
+.cardInteractive::before{
+  content:"";
+  position:absolute;
+  inset:-40%;
+  background: radial-gradient(circle at 30% 30%, rgba(59,130,246,.22), transparent 60%);
+  transform: translateX(-30%) translateY(-10%);
+  opacity: 0;
+  transition: opacity .14s ease;
+  pointer-events:none;
+}
+
+.cardInteractive:hover::before{
+  opacity: 1;
+}
+
+.cardInteractive:active{
+  transform: translateY(-2px) scale(0.99);
+}
+
+/* Accesibilidad teclado */
+.cardInteractive:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(59,130,246,.22), 0 18px 50px rgba(0,0,0,.35);
+  border-color: rgba(59,130,246,.55);
+}
+
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <div class="frame" id="top">
+      <header class="topbar">
+        <div class="hero">
+          <h1>API Patterns: REST, Webhooks, SOAP y GraphQL</h1>
+          <p><em>Guía práctica + comparativas + ejemplos production-ready.</em></p>
+
+          <div class="cta-row">
+            <button class="btn primary" data-scroll="#comparativa"><span>Ver Comparativa</span></button>
+            <button class="btn ghost" data-scroll="#demos"><span>Ver Demos</span></button>
+            <a class="btn" href="https://github.com/" target="_blank" rel="noreferrer"><span>Repositorio GitHub</span></a>
+          </div>
+        </div>
+      </header>
+
+      <main class="content">
+        <aside class="sidebar">
+          <div class="panel">
+            <div class="hd">
+              <div class="title"><span class="dot"></span> About Me</div>
+              <span class="muted" style="font-size:11px;">v1</span>
+            </div>
+            <div class="bd">
+              <div class="me">
+                <div class="avatar" aria-hidden="true"></div>
+                <div class="name">Tu Nombre</div>
+                <div class="role">Backend Developer • Node.js, Python</div>
+
+                <div class="badges">
+                  <div class="badge">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z" stroke="currentColor" opacity=".9" stroke-width="1.7"/>
+                      <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div><strong>5+ años</strong> construyendo APIs y servicios.</div>
+                  </div>
+
+                  <div class="badge">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none">
+                      <path d="M4 12h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                      <path d="M7 9l-3 3 3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M17 9l3 3-3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div><strong>Obs.</strong> logs estructurados + tracing + métricas.</div>
+                  </div>
+                </div>
+
+                <div class="social">
+                  <button class="chip" type="button" data-toast="Pon aquí tu LinkedIn"><span>in</span><span class="muted">LinkedIn</span></button>
+                  <button class="chip" type="button" data-toast="Pon aquí tu GitHub"><span>{ }</span><span class="muted">GitHub</span></button>
+                </div>
+
+                <div class="hr"></div>
+                <button class="btn" type="button" data-scroll="#overview" style="width:100%; justify-content:center;">
+                  Ir al Overview
+                </button>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <section class="main">
+          <section class="section" id="overview">
+            <div class="hd">
+              <h2>Overview de APIs</h2>
+              <div class="meta">
+                <span class="pill">Enfoque: decisiones + ejemplos</span>
+                <span class="pill">DX & producción</span>
+              </div>
+            </div>
+            <div class="bd">
+              <div class="cards">
+                <a class="card cardInteractive" href="#rest" data-route="rest" aria-label="Ir a REST">
+                    <div class="k">REST</div>
+                    <div class="d">Recursos + HTTP</div>
+                    <div class="tag"><span class="bullet">R</span><span>Cacheable • simple • popular</span></div>
+                </a>
+
+                <div class="card">
+                  <div class="k">Webhooks</div>
+                  <div class="d">Eventos push</div>
+                  <div class="tag"><span class="bullet">W</span><span>Integraciones • async • retries</span></div>
+                </div>
+                <div class="card">
+                  <div class="k">SOAP</div>
+                  <div class="d">Contratos XML</div>
+                  <div class="tag"><span class="bullet">S</span><span>Enterprise • WSDL • tooling</span></div>
+                </div>
+                <div class="card">
+                  <div class="k">GraphQL</div>
+                  <div class="d">Consultas flexibles</div>
+                  <div class="tag"><span class="bullet">G</span><span>Evita over/under-fetching</span></div>
+                </div>
+              </div>
+
+              <div class="diagram">
+                <div class="muted" style="font-size:12px; margin-bottom:10px;">
+                  Vista rápida: dónde encaja cada estilo dentro de un stack típico.
+                </div>
+                <div class="flow">
+                  <div class="node">Client</div>
+                  <div class="arrow">→</div>
+                  <div class="node">API Gateway</div>
+                  <div class="arrow">→</div>
+                  <div class="node">Services</div>
+                  <div class="arrow">→</div>
+                  <div class="node">DB</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section" id="comparativa">
+            <div class="hd">
+              <h2>Comparativa Rápida</h2>
+              <div class="meta">
+                <span class="pill">framework de decisión</span>
+                <span class="pill">trade-offs</span>
+              </div>
+            </div>
+
+            <div class="bd">
+              <div class="compare">
+                <div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Factor</th>
+                        <th>REST</th>
+                        <th>Webhooks</th>
+                        <th>SOAP</th>
+                        <th>GraphQL</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Formato</td>
+                        <td><span class="mark ok">✓</span></td>
+                        <td><span class="mark ok">✓</span></td>
+                        <td><span class="mark ok">✓</span></td>
+                        <td><span class="mark ok">✓</span></td>
+                      </tr>
+                      <tr>
+                        <td>Contrato fuerte</td>
+                        <td><span class="mark mid">◐</span></td>
+                        <td><span class="mark no">×</span></td>
+                        <td><span class="mark ok">✓</span></td>
+                        <td><span class="mark ok">✓</span></td>
+                      </tr>
+                      <tr>
+                        <td>Cacheabilidad</td>
+                        <td><span class="mark ok">✓</span></td>
+                        <td><span class="mark no">×</span></td>
+                        <td><span class="mark mid">◐</span></td>
+                        <td><span class="mark mid">◐</span></td>
+                      </tr>
+                      <tr>
+                        <td>Eventos/Async</td>
+                        <td><span class="mark mid">◐</span></td>
+                        <td><span class="mark ok">✓</span></td>
+                        <td><span class="mark no">×</span></td>
+                        <td><span class="mark mid">◐</span></td>
+                      </tr>
+                      <tr>
+                        <td>Complejidad</td>
+                        <td><span class="mark ok">✓</span></td>
+                        <td><span class="mark mid">◐</span></td>
+                        <td><span class="mark mid">◐</span></td>
+                        <td><span class="mark mid">◐</span></td>
+                      </tr>
+                      <tr>
+                        <td>Uso ideal</td>
+                        <td style="text-align:left">API pública simple</td>
+                        <td style="text-align:left">Integraciones eventos</td>
+                        <td style="text-align:left">Legado enterprise</td>
+                        <td style="text-align:left">UI compleja</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="quick">
+                  <div class="qhd">
+                    <span>Decisión Rápida</span>
+                    <button class="toggle" type="button" id="toggleMode">Modo: Básico</button>
+                  </div>
+                  <ul id="decisionList"></ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section" id="ejemplos">
+            <div class="hd">
+              <h2>Ejemplos (con Run)</h2>
+              <div class="meta">
+                <span class="pill">REST y GraphQL corren en navegador</span>
+                <span class="pill">SOAP: CORS</span>
+              </div>
+            </div>
+
+            <div class="bd">
+              <div class="examples">
+                <!-- REST -->
+                <div class="ex">
+                  <div class="exhd">
+                    <div class="label"><span class="bullet">R</span> REST</div>
+                    <div class="runRow">
+                      <button class="miniBtn primary" type="button" id="runRest">Run</button>
+                      <button class="miniBtn" type="button" id="clearRest">Clear</button>
+                    </div>
+                  </div>
+
+                  <pre class="code" data-code="rest">
+<button class="copy" type="button" data-copy="rest">Copy</button>
+curl -sS https://jsonplaceholder.typicode.com/posts/1</pre>
+
+                  <div class="out">
+                    <div class="outHdr">
+                      <div><strong>Output</strong> <span class="hint">(fetch GET)</span></div>
+                      <div class="status" id="statusRest">Idle</div>
+                    </div>
+                    <pre id="outRest">{}</pre>
+                  </div>
+                </div>
+
+                <!-- Webhooks -->
+                <div class="ex">
+                  <div class="exhd">
+                    <div class="label"><span class="bullet">W</span> Webhooks</div>
+                    <div class="runRow">
+                      <button class="miniBtn primary" type="button" id="runWebhook">Run</button>
+                      <button class="miniBtn" type="button" id="clearWebhook">Clear</button>
+                    </div>
+                  </div>
+
+                  <div style="padding:12px; border-top:1px solid rgba(255,255,255,.06); background: rgba(0,0,0,.14);">
+                    <div class="hint" style="margin-bottom:8px;">
+                      Pega tu URL de webhook.site (ej: https://webhook.site/TU_ID)
+                    </div>
+                    <input class="input" id="webhookUrl" placeholder="https://webhook.site/..." />
+                  </div>
+
+                  <pre class="code" data-code="webhook">
+<button class="copy" type="button" data-copy="webhook">Copy</button>
+curl -sS -X POST "https://webhook.site/TU_ID" \
+  -H "Content-Type: application/json" \
+  -H "X-Event-Type: payment.succeeded" \
+  -d '{
+    "id":"evt_001",
+    "type":"payment.succeeded",
+    "data":{"paymentId":"pay_123","amount":12999,"currency":"USD"}
+  }'</pre>
+
+                  <div class="out">
+                    <div class="outHdr">
+                      <div><strong>Output</strong> <span class="hint">(fetch POST)</span></div>
+                      <div class="status" id="statusWebhook">Idle</div>
+                    </div>
+                    <pre id="outWebhook">{}</pre>
+                  </div>
+                </div>
+
+                <!-- SOAP -->
+                <div class="ex">
+                  <div class="exhd">
+                    <div class="label"><span class="bullet">S</span> SOAP</div>
+                    <div class="runRow">
+                      <button class="miniBtn primary" type="button" id="runSoap" disabled title="SOAP público suele bloquearse por CORS en navegador">
+                        Run
+                      </button>
+                      <button class="miniBtn" type="button" id="clearSoap">Clear</button>
+                    </div>
+                  </div>
+
+                  <pre class="code" data-code="soap">
+<button class="copy" type="button" data-copy="soap">Copy</button>
+curl -sS "https://www.dataaccess.com/webservicesserver/NumberConversion.wso" \
+  -H 'Content-Type: text/xml; charset=utf-8' \
+  -H 'SOAPAction: http://www.dataaccess.com/webservicesserver/NumberToDollars' \
+  --data-binary @- <<'XML'
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <NumberToDollars xmlns="http://www.dataaccess.com/webservicesserver/">
+      <dNum>83</dNum>
+    </NumberToDollars>
+  </soap:Body>
+</soap:Envelope>
+XML</pre>
+
+                  <div class="out">
+                    <div class="outHdr">
+                      <div><strong>Output</strong> <span class="hint">(requiere proxy por CORS)</span></div>
+                      <div class="status" id="statusSoap">Disabled</div>
+                    </div>
+                    <pre id="outSoap">{"note":"Para correr SOAP con Run necesitas un proxy (backend) que haga la request SOAP."}</pre>
+                  </div>
+                </div>
+
+                <!-- GraphQL -->
+                <div class="ex">
+                  <div class="exhd">
+                    <div class="label"><span class="bullet">G</span> GraphQL</div>
+                    <div class="runRow">
+                      <button class="miniBtn primary" type="button" id="runGraphql">Run</button>
+                      <button class="miniBtn" type="button" id="clearGraphql">Clear</button>
+                    </div>
+                  </div>
+
+                  <pre class="code" data-code="graphql">
+<button class="copy" type="button" data-copy="graphql">Copy</button>
+curl -sS https://countries.trevorblades.com/ \
+  -H "Content-Type: application/json" \
+  -d '{"query":"query ($code: ID!) { country(code: $code) { name capital currency languages { code name } } }","variables":{"code":"ES"}}'</pre>
+
+                  <div class="out">
+                    <div class="outHdr">
+                      <div><strong>Output</strong> <span class="hint">(fetch POST)</span></div>
+                      <div class="status" id="statusGraphql">Idle</div>
+                    </div>
+                    <pre id="outGraphql">{}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section" id="demos">
+            <div class="hd">
+              <h2>Demos & Recursos</h2>
+              <div class="meta">
+                <span class="pill">prueba de skills</span>
+                <span class="pill">correr local</span>
+              </div>
+            </div>
+
+            <div class="bd">
+              <div class="demos">
+                <button class="demo" type="button" data-toast="Demo: REST + Swagger UI (link a tu proyecto)">
+                  <span class="badgeDot"></span><span>API REST + Swagger UI</span>
+                </button>
+                <button class="demo green" type="button" data-toast="Demo: receptor de webhooks con validación HMAC">
+                  <span class="badgeDot"></span><span>Recepción de Webhook</span>
+                </button>
+                <button class="demo purple" type="button" data-toast="Demo: GraphQL Playground + schema">
+                  <span class="badgeDot"></span><span>GraphQL Playground</span>
+                </button>
+              </div>
+
+              <div class="hr"></div>
+              <div class="muted" style="text-align:center;">
+                Código production-ready • Buenas prácticas • Seguridad & escalabilidad
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <footer class="footnote">
+        © <span id="year"></span> • Tu nombre aquí • <span class="muted">APIs con contratos claros, seguridad y observabilidad.</span>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="tDot" aria-hidden="true"></span>
+    <span id="toastText"></span>
+  </div>
+
+  <script>
+    (function () {
+      // Year
+      document.getElementById("year").textContent = String(new Date().getFullYear());
+
+      // Smooth scroll
+      document.addEventListener("click", (e) => {
+        const t = e.target.closest("[data-scroll]");
+        if (!t) return;
+        const sel = t.getAttribute("data-scroll");
+        const el = document.querySelector(sel);
+        if (!el) return;
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+
+      // Toast
+      const toast = document.getElementById("toast");
+      const toastText = document.getElementById("toastText");
+      let toastTimer = null;
+      function showToast(msg) {
+        toastText.textContent = msg;
+        toast.classList.add("show");
+        if (toastTimer) window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove("show"), 1600);
+      }
+      document.addEventListener("click", (e) => {
+        const t = e.target.closest("[data-toast]");
+        if (!t) return;
+        showToast(t.getAttribute("data-toast"));
+      });
+
+      // Copy buttons
+      document.addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-copy]");
+        if (!btn) return;
+
+        const key = btn.getAttribute("data-copy");
+        const pre = document.querySelector(`pre[data-code="${key}"]`);
+        if (!pre) return;
+
+        const text = Array.from(pre.childNodes)
+          .filter(n => n.nodeType === Node.TEXT_NODE || n.nodeName === "SPAN")
+          .map(n => n.textContent)
+          .join("")
+          .trim();
+
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast("Copiado ✅");
+        } catch {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+          showToast("Copiado (fallback) ✅");
+        }
+      });
+
+      // Decision panel toggle
+      const toggle = document.getElementById("toggleMode");
+      const list = document.getElementById("decisionList");
+      let mode = "basic";
+      function escapeHtml(s){
+        return String(s)
+          .replaceAll("&","&amp;")
+          .replaceAll("<","&lt;")
+          .replaceAll(">","&gt;")
+          .replaceAll('"',"&quot;")
+          .replaceAll("'","&#039;");
+      }
+      function renderDecision() {
+        const itemsBasic = [
+          { t: "API pública simple y cacheable", v: "REST" },
+          { t: "Eventos externos (pagos, envíos)", v: "Webhooks" },
+          { t: "Legado enterprise / contratos WSDL", v: "SOAP" },
+          { t: "UI compleja / múltiples vistas", v: "GraphQL" },
+        ];
+        const itemsPro = [
+          { t: "Cache HTTP (ETag/CDN), recursos y semántica HTTP", v: "REST" },
+          { t: "Firma HMAC + retries + idempotencia", v: "Webhooks" },
+          { t: "WSDL/XSD + tooling enterprise", v: "SOAP" },
+          { t: "Schema-first, evita over/under-fetching", v: "GraphQL" },
+          { t: "Tracing: correlation-id + logs + métricas", v: "Transversal" },
+        ];
+        const items = mode === "basic" ? itemsBasic : itemsPro;
+        list.innerHTML = items.map(it => (
+          `<li><span class="bullet">▸</span><span>${escapeHtml(it.t)} → <strong>${escapeHtml(it.v)}</strong></span></li>`
+        )).join("");
+      }
+      toggle.addEventListener("click", () => {
+        mode = mode === "basic" ? "pro" : "basic";
+        toggle.textContent = `Modo: ${mode === "basic" ? "Básico" : "Pro"}`;
+        renderDecision();
+        showToast(mode === "basic" ? "Modo Básico" : "Modo Pro");
+      });
+      renderDecision();
+
+      // Helper: pretty print
+      function pretty(obj){
+        try { return JSON.stringify(obj, null, 2); }
+        catch { return String(obj); }
+      }
+
+      // Helper: set output
+      function setOut(outId, statusId, statusText, payload){
+        const out = document.getElementById(outId);
+        const st = document.getElementById(statusId);
+        st.textContent = statusText;
+        out.textContent = typeof payload === "string" ? payload : pretty(payload);
+      }
+
+      // REST Run
+      document.getElementById("runRest").addEventListener("click", async () => {
+        setOut("outRest", "statusRest", "Running...", {});
+
+        const url = "https://jsonplaceholder.typicode.com/posts/1";
+        const t0 = performance.now();
+        try {
+          const res = await fetch(url, { headers: { "Accept": "application/json" } });
+          const data = await res.json();
+          const ms = Math.round(performance.now() - t0);
+
+          setOut("outRest", "statusRest", `HTTP ${res.status} • ${ms}ms`, {
+            request: { method: "GET", url },
+            response: data
+          });
+        } catch (err) {
+          setOut("outRest", "statusRest", "Error", { error: err.message });
+        }
+      });
+      document.getElementById("clearRest").addEventListener("click", () => {
+        setOut("outRest", "statusRest", "Idle", {});
+      });
+
+      // GraphQL Run
+      document.getElementById("runGraphql").addEventListener("click", async () => {
+        setOut("outGraphql", "statusGraphql", "Running...", {});
+        const url = "https://countries.trevorblades.com/";
+        const body = {
+          query: `query ($code: ID!) {
+            country(code: $code) {
+              name
+              capital
+              currency
+              languages { code name }
+            }
+          }`,
+          variables: { code: "ES" }
+        };
+
+        const t0 = performance.now();
+        try {
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          const ms = Math.round(performance.now() - t0);
+
+          setOut("outGraphql", "statusGraphql", `HTTP ${res.status} • ${ms}ms`, {
+            request: { method: "POST", url, body },
+            response: data
+          });
+        } catch (err) {
+          setOut("outGraphql", "statusGraphql", "Error", { error: err.message });
+        }
+      });
+      document.getElementById("clearGraphql").addEventListener("click", () => {
+        setOut("outGraphql", "statusGraphql", "Idle", {});
+      });
+
+      // Webhook Run (send a POST to user's URL)
+      document.getElementById("runWebhook").addEventListener("click", async () => {
+        const url = document.getElementById("webhookUrl").value.trim();
+        if (!url || !url.startsWith("http")) {
+          showToast("Pega tu URL de webhook.site");
+          setOut("outWebhook", "statusWebhook", "Missing URL", { error: "Falta webhook URL" });
+          return;
+        }
+
+        setOut("outWebhook", "statusWebhook", "Running...", {});
+        const payload = {
+          id: "evt_001",
+          type: "payment.succeeded",
+          data: { paymentId: "pay_123", amount: 12999, currency: "USD" }
+        };
+
+        const t0 = performance.now();
+        try {
+          const res = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Event-Type": "payment.succeeded"
+            },
+            body: JSON.stringify(payload)
+          });
+
+          // webhook.site suele responder 200/204; a veces sin body
+          const text = await res.text().catch(() => "");
+          const ms = Math.round(performance.now() - t0);
+
+          setOut("outWebhook", "statusWebhook", `HTTP ${res.status} • ${ms}ms`, {
+            request: { method: "POST", url, headers: { "X-Event-Type": "payment.succeeded" }, body: payload },
+            response: text ? text : "(sin body)"
+          });
+        } catch (err) {
+          setOut("outWebhook", "statusWebhook", "Error", { error: err.message });
+        }
+      });
+      document.getElementById("clearWebhook").addEventListener("click", () => {
+        setOut("outWebhook", "statusWebhook", "Idle", {});
+      });
+
+      // SOAP Clear (Run disabled)
+      document.getElementById("clearSoap").addEventListener("click", () => {
+        setOut("outSoap", "statusSoap", "Disabled", {"note":"CORS bloquea SOAP directo desde navegador. Usa proxy backend."});
+      });
+    })();
+  </script>
+</body>
+</html>
